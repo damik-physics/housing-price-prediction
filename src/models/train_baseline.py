@@ -5,7 +5,8 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error
 from joblib import dump
 
-from src.data.dataset_v1 import CaliforniaHousingDataset
+from src.data.dataset import CaliforniaHousingDataset
+from src.data.preprocess import build_preprocessing_pipeline
 
 MODEL_DIR = Path("models")
 MODEL_PATH = MODEL_DIR / "linear_regression_baseline.joblib"
@@ -18,10 +19,14 @@ def train_baseline():
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    model = LinearRegression()
-    model.fit(X_train, y_train)
+    preprocessor = build_preprocessing_pipeline()
+    X_train_prepared = preprocessor.fit_transform(X_train)
+    X_test_prepared = preprocessor.transform(X_test)
 
-    y_pred = model.predict(X_test)
+    model = LinearRegression()
+    model.fit(X_train_prepared, y_train)
+    
+    y_pred = model.predict(X_test_prepared)
     rmse = np.sqrt(mean_squared_error(y_test, y_pred))
     print(f"Test RMSE: {rmse:.4f}")
 

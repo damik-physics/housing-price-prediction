@@ -1,7 +1,8 @@
 from fastapi import FastAPI
-from pydantic import BaseModel, Field
 import joblib
 import pandas as pd
+from pydantic import BaseModel, Field
+
 from src.utils.config import FINAL_MODEL_PATH
 
 app = FastAPI(title="Housing Price Prediction API")

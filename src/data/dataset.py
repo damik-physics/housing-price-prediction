@@ -1,11 +1,9 @@
 import pandas as pd
-from pathlib import Path
-
-DATA_PATH = Path("data/raw/housing.csv")
+from src.utils.config import RAW_DATA_PATH
 
 class CaliforniaHousingDataset:
     def __init__(self):
-        self.df = pd.read_csv(DATA_PATH)
+        self.df = pd.read_csv(RAW_DATA_PATH)
 
     def get_df(self):
         return self.df

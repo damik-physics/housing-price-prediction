@@ -1,4 +1,3 @@
-from pathlib import Path
 import mlflow
 import numpy as np
 from joblib import dump

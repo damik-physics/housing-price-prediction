@@ -1,7 +1,6 @@
-from pathlib import Path
+from joblib import dump
 import mlflow
 import numpy as np
-from joblib import dump
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error
@@ -53,3 +52,4 @@ def train_baseline():
 
 if __name__ == "__main__":
     train_baseline()
+    

@@ -1,18 +1,21 @@
 from pathlib import Path
-import numpy as np
 import mlflow
-from sklearn.model_selection import train_test_split
+import numpy as np
+from joblib import dump
+from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error
-from joblib import dump
 
 from src.data.dataset import CaliforniaHousingDataset
 from src.data.preprocess import build_preprocessing_pipeline
-
-MODEL_DIR = Path("models")
-MODEL_PATH = MODEL_DIR / "linear_regression_baseline.joblib"
-TARGET = "MedHouseVal"
-EXPERIMENT_NAME = "Housing_Baseline_LinearRegression"
+from src.utils.config import (
+    RANDOM_STATE,
+    TEST_SIZE,
+    TARGET,
+    MODEL_DIR,
+    BASELINE_MODEL_PATH,
+    EXPERIMENT_NAME_BASELINE,
+)
 
 def train_baseline():
     df = CaliforniaHousingDataset().get_df()
@@ -20,36 +23,33 @@ def train_baseline():
     y = df[TARGET]
 
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
+        X, y, test_size=TEST_SIZE, random_state=RANDOM_STATE
     )
 
     preprocessor = build_preprocessing_pipeline()
+    model = LinearRegression()
+
     X_train_prepared = preprocessor.fit_transform(X_train)
     X_test_prepared = preprocessor.transform(X_test)
 
-    model = LinearRegression()
     model.fit(X_train_prepared, y_train)
-    
     y_pred = model.predict(X_test_prepared)
     rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-    print(f"Test RMSE: {rmse:.4f}")
+    cv_scores = cross_val_score(
+        model, X_train_prepared, y_train, scoring="neg_root_mean_squared_error", cv=5
+    )
 
-    MODEL_DIR.mkdir(parents=True, exist_ok=True)
-    dump(model, MODEL_PATH)
-    print(f"Model saved to {MODEL_PATH.resolve()}")
-
-
-    # -----------------------------
-    # Log with MLflow
-    # -----------------------------
-    mlflow.set_experiment(EXPERIMENT_NAME)
+    mlflow.set_experiment(EXPERIMENT_NAME_BASELINE)
     with mlflow.start_run():
         mlflow.log_param("model", "LinearRegression")
-        mlflow.log_metric("rmse", rmse)
+        mlflow.log_param("random_state", RANDOM_STATE)
+        mlflow.log_metric("test_rmse", rmse)
+        mlflow.log_metric("cv_rmse_mean", -cv_scores.mean())
+        mlflow.log_metric("cv_rmse_std", cv_scores.std())
 
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
-    dump(model, MODEL_PATH)
-    print(f"Model saved to {MODEL_PATH.resolve()}")
-    
+    dump({"model": model, "preprocessor": preprocessor}, BASELINE_MODEL_PATH)
+    print(f"Baseline model saved to {BASELINE_MODEL_PATH.resolve()}")
+
 if __name__ == "__main__":
     train_baseline()
